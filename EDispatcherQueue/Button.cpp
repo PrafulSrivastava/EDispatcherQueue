@@ -5,5 +5,5 @@ Button::Button(char key) {
 }
 
 void Button::v_EventHandler() {
-	logger->print(std::string(1, m_KeyPressed));
+	logger->print(std::string(1, m_KeyPressed), __func__, __LINE__);
 }

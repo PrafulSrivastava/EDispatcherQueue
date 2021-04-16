@@ -13,7 +13,7 @@ std::shared_ptr<Logger> Logger::p_GetLoggerInstance() {
 	return m_LoggerInstance;
 }
 
-void Logger::print(const std::string& str) {
+void Logger::print(const std::string& str, const std::string& func, const int& line) {
 	std::unique_lock<std::mutex> lock(m_Mtx);
 	std::stringstream ss;
 	ss << "[";
@@ -21,11 +21,11 @@ void Logger::print(const std::string& str) {
 	ss << "]";
 	ss << " : ";
 	ss << "(";
-	ss << __LINE__;
+	ss << line;
 	ss << ")";
 	ss << " : ";
 	ss << "Function : ";
-	ss << __func__ << "()";
+	ss << func << "()";
 	ss << " : ";
 	ss << str;
 	std::cout << ss.str() << std::endl;

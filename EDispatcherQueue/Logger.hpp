@@ -10,5 +10,5 @@ private:
 	Logger();
 public:
 	static std::shared_ptr<Logger> p_GetLoggerInstance();
-	void print(const std::string& str);
+	void print(const std::string& str, const std::string& func, const int& line);
 };
