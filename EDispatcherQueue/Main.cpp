@@ -3,10 +3,10 @@
 #include <vector>
 #include "Logger.hpp"
 
-void getQueue(std::shared_ptr<ThreadSafeQueue>& queue) {
+void getQueue(std::shared_ptr<ThreadSafeQueue<Event>>& queue) {
 	auto logger = Logger::p_GetLoggerInstance();
 	logger->print("Starting input thread!", __func__, __LINE__);
-	queue = ThreadSafeQueue::get_QueueInstance();
+	queue = ThreadSafeQueue<Event>::get_QueueInstance();
 	while (true) {
 		logger->print("Waiting on input..", __func__, __LINE__);
 		char key;
@@ -19,7 +19,7 @@ void getQueue(std::shared_ptr<ThreadSafeQueue>& queue) {
 int main() {
 	auto logger = Logger::p_GetLoggerInstance();
 	logger->print("Main!", __func__, __LINE__);
-	std::shared_ptr<ThreadSafeQueue> queue = nullptr;
+	std::shared_ptr<ThreadSafeQueue<Event>> queue = nullptr;
 	std::thread executerThread(getQueue, std::ref(queue));
 	if (executerThread.joinable()) {
 		executerThread.join();
