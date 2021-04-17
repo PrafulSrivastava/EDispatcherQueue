@@ -11,8 +11,8 @@ template <typename T>
 class ThreadSafeQueue{
 private:
 	ThreadSafeQueue();
-	std::mutex m_Mtx;
-	std::condition_variable m_Cv;
+	std::recursive_mutex m_Mtx;
+	std::condition_variable_any m_Cv;
 	std::queue<std::shared_ptr<T>> m_Q;
 	std::shared_ptr<T> pop();
 	void push(std::shared_ptr<T> p_Evt);
@@ -22,7 +22,7 @@ private:
 	static std::shared_ptr<Logger> logger;
 public:
 	static std::shared_ptr<ThreadSafeQueue<T>> get_QueueInstance();
-	void v_Push(std::shared_ptr<T> p_Evt);
+	void v_Pop(std::shared_ptr<T> p_Evt);
 	void v_PushAsync(std::shared_ptr<T> p_Evt);
 	void p_PopAsync();
 	bool b_IsEmpty();
@@ -65,10 +65,22 @@ std::shared_ptr<ThreadSafeQueue<T>> ThreadSafeQueue<T>::get_QueueInstance() {
 
 template <typename T>
 void ThreadSafeQueue<T>::push(std::shared_ptr<T> p_Evt) {
-	std::unique_lock<std::mutex> lock(m_Mtx);
+	std::unique_lock<std::recursive_mutex> lock(m_Mtx);
 	m_Q.push(p_Evt);
 	logger->print("Pushed!", __func__, __LINE__);
 }
+
+template <typename T>
+std::shared_ptr<T> ThreadSafeQueue<T>::pop() {
+	//std::recursive_mutex m;
+	std::unique_lock<std::recursive_mutex> lock(m_Mtx);
+	auto item = m_Q.front();
+	m_Q.pop();
+	logger->print("Popped!", __func__, __LINE__);
+	b_IsEmpty();
+	return item;
+}
+
 
 template <typename T>
 bool ThreadSafeQueue<T>::b_IsEmpty() {
@@ -77,6 +89,7 @@ bool ThreadSafeQueue<T>::b_IsEmpty() {
 	}
 	else {
 		m_Empty = false;
+		m_Cv.notify_all();
 	}
 	return m_Empty;
 }
@@ -84,18 +97,16 @@ bool ThreadSafeQueue<T>::b_IsEmpty() {
 template <typename T>
 void ThreadSafeQueue<T>::p_PopAsync() {
 	logger->print("Async Read..", __func__, __LINE__);
-	std::unique_lock<std::mutex> lock(m_Mtx);
+	std::unique_lock<std::recursive_mutex> lock(m_Mtx);
 	while (true) {
 		m_Cv.wait(lock, [] {return !m_Empty; });
-		auto item = m_Q.front();
-		m_Q.pop();
-		b_IsEmpty();
-		v_Push(item);
+		logger->print("Wait Complete..", __func__, __LINE__);
+		v_Pop(pop());
 	}
 }
 
 template <typename T>
-void ThreadSafeQueue<T>::v_Push(std::shared_ptr<T> p_Evt) {
+void ThreadSafeQueue<T>::v_Pop(std::shared_ptr<T> p_Evt) {
 	logger->print("Sync Write..", __func__, __LINE__);
 	p_Evt->v_EventHandler();
 }
@@ -104,8 +115,5 @@ template <typename T>
 void ThreadSafeQueue<T>::v_PushAsync(std::shared_ptr<T> p_Evt) {
 	logger->print("Async Write..", __func__, __LINE__);
 	push(p_Evt);
-	if (!m_Q.empty()) {
-		m_Empty = false;
-		m_Cv.notify_one();
-	}
+	b_IsEmpty();
 }
