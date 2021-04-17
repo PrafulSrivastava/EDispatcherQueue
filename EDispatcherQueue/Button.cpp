@@ -1,6 +1,7 @@
 #include "Button.hpp"
 
 Button::Button(char key) {
+	callback = std::bind(&Button::v_EventHandler, this);
 	m_KeyPressed = key;
 }
 

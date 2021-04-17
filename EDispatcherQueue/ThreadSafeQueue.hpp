@@ -25,6 +25,7 @@ public:
 	void v_Pop(std::shared_ptr<T> p_Evt);
 	void v_PushAsync(std::shared_ptr<T> p_Evt);
 	void p_PopAsync();
+	void v_HandleCallback(std::shared_ptr<T> p_Evt);
 	bool b_IsEmpty();
 	~ThreadSafeQueue();
 };
@@ -72,7 +73,6 @@ void ThreadSafeQueue<T>::push(std::shared_ptr<T> p_Evt) {
 
 template <typename T>
 std::shared_ptr<T> ThreadSafeQueue<T>::pop() {
-	//std::recursive_mutex m;
 	std::unique_lock<std::recursive_mutex> lock(m_Mtx);
 	auto item = m_Q.front();
 	m_Q.pop();
@@ -108,7 +108,7 @@ void ThreadSafeQueue<T>::p_PopAsync() {
 template <typename T>
 void ThreadSafeQueue<T>::v_Pop(std::shared_ptr<T> p_Evt) {
 	logger->print("Sync Write..", __func__, __LINE__);
-	p_Evt->v_EventHandler();
+	v_HandleCallback(p_Evt);
 }
 
 template <typename T>
@@ -116,4 +116,9 @@ void ThreadSafeQueue<T>::v_PushAsync(std::shared_ptr<T> p_Evt) {
 	logger->print("Async Write..", __func__, __LINE__);
 	push(p_Evt);
 	b_IsEmpty();
+}
+
+template <typename T>
+void ThreadSafeQueue<T>::v_HandleCallback(std::shared_ptr<T> p_Evt) {
+	p_Evt->callback();
 }
