@@ -69,6 +69,7 @@ void ThreadSafeQueue<T>::push(std::shared_ptr<T> p_Evt) {
 	std::unique_lock<std::recursive_mutex> lock(m_Mtx);
 	m_Q.push(p_Evt);
 	logger->print("Pushed!", __func__, __LINE__);
+	b_IsEmpty();
 }
 
 template <typename T>
@@ -115,7 +116,6 @@ template <typename T>
 void ThreadSafeQueue<T>::v_PushAsync(std::shared_ptr<T> p_Evt) {
 	logger->print("Async Write..", __func__, __LINE__);
 	push(p_Evt);
-	b_IsEmpty();
 }
 
 template <typename T>
